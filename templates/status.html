@@ -88,8 +88,8 @@
             <td>{{ ship.ship_symbol }}</td>
             <td>{{ ship.waypoint }}</td>
             <td>{{ ship.status }}</td>
-            <td>{{ ship.fuel_current }} ( {{ ship.fuel_capacity }} )</td>
-            <td>{{ ship.cargo_units }} ( {{ ship.cargo_capacity }} )</td>
+            <td>{{ ship.fuel_current }} ({{ ship.fuel_capacity }})</td>
+            <td>{{ ship.cargo_units }} ({{ ship.cargo_capacity }})</td>
             <td>{{ ship.destination }}</td>
             <td>{{ ship.frame }}</td>
             <td>{{ ship.inventory }}</td>
@@ -138,6 +138,14 @@
                     <input type=submit value=FLY>
                 </form>
                 {% endif %}
+
+
+                <form method=post action="marketplace_page">
+                    <input type='hidden' name='market_waypoint' value='{{ ship.waypoint }}'> 
+                    <input type='hidden' name='ship_symbol' value='{{ ship.ship_symbol }}'> 
+                    <input type='hidden' name='ship_status' value='{{ ship.status }}'> 
+                    <input type=submit value=MARKET>
+                </form>
 
             </td>
         </tr>

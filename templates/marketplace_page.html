@@ -1,0 +1,51 @@
+<!doctype html>
+<title>SWI for SpaceTraders (marektplace page)</title>
+
+
+<h3>Marketplace</h3>
+
+<p><a href="{{ url_for('status_page') }}">Return to status page</a></p>
+
+<table border=1>
+    <tr>
+        <th>symbol</th>
+        <th>type</th>
+        <th>trade Volume</th>
+        <th>supply</th>
+        <th>activity</th>
+        <th>purchasePrice</th>
+        <th>sellPrice</th>
+        <th>Action</th>
+    </tr>
+    {% for item in avaliable_goods %}
+    <tr>
+        <td>{{ item.symbol }}</td>
+        <td>{{ item.type }}</td>
+        <td>{{ item.tradeVolume }}</td>
+        <td>{{ item.supply }}</td>
+        <td>{{ item.activity }}</td>
+        <td>{{ item.purchasePrice }}</td>
+        <td>{{ item.sellPrice }}</td>
+
+        <td>
+        {% if ship_status == "DOCKED" %}
+        <form method=post action="market_transaction">
+            <input type="radio" id="html" name="transaction_type" value="purchase">
+            <label for="buy">BUY</label><br>
+            <input type="radio" id="css" name="transaction_type" value="sell">
+            <label for="buy">SELL</label><br>
+            <input type="text" id="units" name="units">units
+            <input type='hidden' name='product_symbol' value='{{ item.symbol }}'>
+            <input type='hidden' name='market_waypoint' value='{{ market_waypoint }}'> 
+            <input type='hidden' name='ship_symbol' value='{{ ship_symbol }}'> 
+            <input type='submit' value=REQUEST>
+          </form>
+          {% else %}
+          Not docked
+          {% endif %}
+        </td>
+
+    </tr>
+    {% endfor %}
+</table>
+

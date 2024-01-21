@@ -121,3 +121,41 @@ def buy_ship_action():
     message = Api.buy_ship_action(ship_type, waypoint)
     flash(message)
     return redirect(url_for('status_page'))
+
+
+
+
+@app.route("/marketplace_page", methods=['POST'])
+def marketplace_page():
+    market_waypoint = request.form['market_waypoint']
+    ship_symbol = request.form['ship_symbol']
+    ship_status = request.form['ship_status']
+
+    avaliable_goods = Api.get_list_of_avaliable_for_purchase_goods(market_waypoint)
+
+    return render_template('marketplace_page.html', avaliable_goods=avaliable_goods,market_waypoint=market_waypoint, ship_symbol=ship_symbol, ship_status=ship_status)
+
+
+
+@app.route("/market_transaction", methods=['POST'])
+def market_transaction():
+    product_symbol = request.form['product_symbol']
+    market_waypoint = request.form['market_waypoint']
+    units = request.form['units']
+    transaction_type = request.form['transaction_type']
+    ship_symbol = request.form['ship_symbol']
+
+
+    logging.info("Requested transaction {} of {} units product {} in market {}".format(
+        transaction_type,
+        units,
+        product_symbol,
+        market_waypoint))
+    
+
+    message = Api.market_transaction_action(transaction_type, product_symbol, units, market_waypoint, ship_symbol )
+    flash(message)
+    return redirect(url_for('status_page'))
+
+
+

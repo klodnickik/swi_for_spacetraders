@@ -14,8 +14,6 @@ def get_agent_status():
     if request_response_code != 200:
             logging.error("Response code: {}".format(request_response_code))
             logging.error(agent_status_response)
-    else:
-            logging.debug(agent_status_response)
 
 
     response = {
@@ -132,7 +130,6 @@ def get_list_of_ships():
             'cargo_capacity' : ship['cargo']['capacity'],
             'destination' : ship['nav']['route']['destination']['symbol'],
             'frame' : ship['frame']['symbol'],
-            # 'inventory' : ship['cargo']['inventory'],
             'inventory' : cargo_list,            
             'arrival' : ship['nav']['route']['arrival']
         }
@@ -316,5 +313,67 @@ def buy_ship_action(ship_symbol, waypoint):
     else:
         message = "Transaction NOT completed. ({})".format(request_response['error']['message'])
         logging.warning(message)
+
+    return message
+
+
+def get_list_of_avaliable_for_purchase_goods(waypoint):
+
+    system_waypoint = waypoint[0:7]
+
+    endpoint = 'https://api.spacetraders.io/v2/systems/' + system_waypoint + '/waypoints/'+ waypoint + '/market'
+    market_data_raw = requests.get(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
+    market_data = market_data_raw.json()
+
+    if market_data_raw.status_code == 200:
+        try:
+            avaliable_goods = market_data['data']['tradeGoods']
+            logging.info("Market in waypoint {} has {} products".format(
+                waypoint,
+                len(avaliable_goods)
+                ))
+        except:
+            avaliable_goods = []
+            logging.error("No response for tradeGoods for waypoint {}".format(waypoint))
+    else:
+        logging.error("Error, unexpected response code {}". format(market_data_raw.status_code))
+        logging.error(market_data)
+        avaliable_goods = []
+
+
+    return avaliable_goods
+  
+
+def market_transaction_action(transaction_type, product_symbol, units, market_waypoint, ship_symbol ):
+
+
+    endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/' + transaction_type
+    parameter = { 'symbol' : product_symbol,
+                 'units' : units }
+        
+    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token,
+                'Content-Type': 'application/json',
+                'Accept' : 'application/json' }
+
+    request_response_raw = requests.post(endpoint, json=parameter, headers=headers)
+    request_response = request_response_raw.json()
+
+    
+    if request_response_raw.status_code == 201:
+        transaction_units = request_response['data']['transaction']['units']
+        transaction_type = request_response['data']['transaction']['type']
+        transaction_totalPrice = request_response['data']['transaction']['totalPrice']
+        message = "Transaction completed ({}), units {}, total price {}".format(
+            transaction_type,
+            transaction_units,
+            transaction_totalPrice
+        )
+        logging.info (message)
+    else:
+        message =  ("Transaction with ERROR. Error code {}. {}").format(
+            request_response_raw.status_code,
+            request_response['error']['message'])
+        logging.error(message)
+        logging.error(request_response)
 
     return message
