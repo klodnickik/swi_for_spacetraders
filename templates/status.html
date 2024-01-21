@@ -1,0 +1,145 @@
+<!doctype html>
+<title>SWI for SpaceTraders (status)</title>
+
+
+<h3>Status of agent</h3>
+
+<table border=1>
+    <tr>
+        <th>agent_symbol</th>
+        <th>Headquarters</th>
+        <th>Credits</th>
+        <th>Ships</th>
+        <th>Actions</th>
+    </tr>
+    <tr>
+        <td>{{ agent_status.agent_symbol }}</td>
+        <td>{{ agent_status.headquarters }}</td>
+        <td>{{ agent_status.credits }}</td>
+        <td>{{ agent_status.shipCount }}</td>
+        <td>
+            <form method=post action="purchase_ship">
+                <input type='hidden' name='headquarter' value='{{ agent_status.headquarters }}'> 
+                <input type=submit value='PURCHASE A SHIP'>
+            </form>
+        </td>
+
+
+    </tr>
+</table>
+
+<h3>List of contracts</h3>
+
+<table border=1>
+    <tr>
+        <th>Symbol</th>
+        <th>deadline</th>
+        <th>destination</th>
+        <th>accepted</th>
+        <th>payment_on_accepted</th>
+        <th>units_required</th>
+        <th>units_fulfilled</th>
+        <th>payment_on_fulfilled</th>
+        <th>fulfilled</th>
+        <th>Action</th>
+    </tr>
+    {% for contract in list_of_contracts %}
+        <tr>
+            <td>{{ contract.symbol }}</td>
+            <td>{{ contract.deadline }}</td>
+            <td>{{ contract.destination }}</td>
+            <td>{{ contract.accepted }}</td>
+            <td>{{ contract.payment_on_accepted }}</td>
+            <td>{{ contract.units_required }}</td>
+            <td>{{ contract.units_fulfilled }}</td>
+            <td>{{ contract.payment_on_fulfilled }}</td>
+            <td>{{ contract.fulfilled }}</td>
+            <td>
+                {% if contract.accepted == False %}
+                <form method=post action="accept_contract">
+                    <input type='hidden' name='contract_id' value='{{ contract.contract_id }}'> 
+                    <input type=submit value=ACCEPT>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+
+
+<h3>List of ships</h3>
+
+<table border=1>
+    <tr>
+        <th>ship_symbol</th>
+        <th>waypoint</th>
+        <th>status</th>
+        <th>fuel</th>
+        <th>cargo</th>
+        <th>destination</th>
+        <th>frame</th>
+        <th>inventory</th>
+        <th>Arrival</th>
+        <th>Action</th>
+    </tr>
+    {% for ship in list_of_ships %}
+        <tr>
+            <td>{{ ship.ship_symbol }}</td>
+            <td>{{ ship.waypoint }}</td>
+            <td>{{ ship.status }}</td>
+            <td>{{ ship.fuel_current }} ( {{ ship.fuel_capacity }} )</td>
+            <td>{{ ship.cargo_units }} ( {{ ship.cargo_capacity }} )</td>
+            <td>{{ ship.destination }}</td>
+            <td>{{ ship.frame }}</td>
+            <td>{{ ship.inventory }}</td>
+            <td>{{ ship.arrival }}</td>
+            <td>
+                {% if ship.status == "DOCKED" %}
+                <form method=post action="ship_action">
+                    <input type='hidden' name='ship_symbol' value='{{ ship.ship_symbol }}'> 
+                    <input type='hidden' name='ship_requested_action' value='orbit'> 
+                    <input type=submit value=ORBIT>
+                </form>
+                {% endif %}
+
+                {% if ship.status == "DOCKED" %}
+                <form method=post action="ship_action">
+                    <input type='hidden' name='ship_symbol' value='{{ ship.ship_symbol }}'> 
+                    <input type='hidden' name='ship_requested_action' value='refuel'> 
+                    <input type=submit value=REFUEL>
+                </form>
+                {% endif %}
+
+                {% if ship.status == "IN_ORBIT" %}
+                <form method=post action="ship_action">
+                    <input type='hidden' name='ship_symbol' value='{{ ship.ship_symbol }}'> 
+                    <input type='hidden' name='ship_requested_action' value='dock'> 
+                    <input type=submit value=DOCK>
+                </form>
+                {% endif %}
+            
+                {% if ship.status == "IN_ORBIT" %}
+                <form method=post action="fly_ship">
+                    <input type='hidden' name='ship_symbol' value='{{ ship.ship_symbol }}'> 
+                    <input type='hidden' name='ship_waypoint' value='{{ ship.waypoint }}'> 
+                    <input type='hidden' name='ship_frame' value='{{ ship.frame }}'> 
+                    <input type=submit value=FLY>
+                </form>
+                {% endif %}
+
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+
+<p>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-info" role="alert"><b>{{ message }}</b></div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+</p>

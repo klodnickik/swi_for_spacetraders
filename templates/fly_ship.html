@@ -1,0 +1,65 @@
+<!doctype html>
+<title>SWI for SpaceTraders (fly ship)</title>
+
+
+<h3>Fly your ship</h3>
+
+<p><a href="{{ url_for('status_page') }}">Return to status page</a></p>
+
+<table border=1>
+    <tr>
+        <th>ship_symbol</th>
+        <th>ship_waypoint</th>
+        <th>ship_frame</th>
+    </tr>
+    <tr>
+        <td>{{ ship_symbol }}</td>
+        <td>{{ ship_waypoint }}</td>
+        <td>{{ ship_frame }}</td>
+    </tr>
+</table>
+
+
+
+<h3>System waypoints</h3>
+
+<table border=1>
+    <tr>
+        <th>symbol</th>
+        <th>type</th>
+        <th>trail_symbol</th>
+        <th>faction</th>
+        <th>marketplace</th>
+        <th>trading_hub</th>
+        <th>shipyard</th>
+        <th>Action</th>
+    </tr>
+    {% for waypoint in system_waypoints %}
+        <tr>
+            <td>{{ waypoint.symbol }}</td>
+            <td>{{ waypoint.type }}</td>
+            <td>{{ waypoint.traits_symbol }}</td>
+            <td>{{ waypoint.faction }}</td>
+            <td>{{ waypoint.marketplace }}</td>
+            <td>{{ waypoint.trading_hub }}</td>
+            <td>{{ waypoint.shipyard }}</td>
+            <td>
+                {% if waypoint.symbol != ship_waypoint %}
+                <form method=post action="fly_command">
+                    <input type='hidden' name='ship_symbol' value='{{ ship_symbol }}'> 
+                    <input type='hidden' name='dest_waypoint_symbol' value='{{ waypoint.symbol }}'> 
+                    <input type=submit value=FLY>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+
+
+
+
+
+
+
