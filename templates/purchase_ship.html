@@ -1,0 +1,29 @@
+<!doctype html>
+<title>SWI for SpaceTraders (purchase ship)</title>
+
+
+<h3>Purchase ship</h3>
+
+<p><a href="{{ url_for('status_page') }}">Return to status page</a></p>
+
+<table border=1>
+    <tr>
+        <th>waypoint</th>
+        <th>ship_type</th>
+        <th>Action</th>
+    </tr>
+    {% for ship_offer in available_ships %}
+    <tr>
+        <td>{{ ship_offer.waypoint }}</td>
+        <td>{{ ship_offer.ship_type }}</td>
+        <td>
+        <form method=post action="buy_ship">
+            <input type='hidden' name='ship_type' value='{{ ship_offer.ship_type }}'> 
+            <input type='hidden' name='waypoint' value='{{ ship_offer.waypoint }}'> 
+            <input type=submit value=BUY>
+        </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+

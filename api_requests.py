@@ -113,6 +113,15 @@ def get_list_of_ships():
 
     for ship in ship_status_response['data']:
 
+        cargo_list = []
+
+        for item in ship['cargo']['inventory']:
+            cargo_json = {
+                'symbol' : item['symbol'],
+                'units' : item['units']
+            }
+            cargo_list.append(cargo_json)
+
         response_json = {
             'ship_symbol' : ship['symbol'],
             'waypoint' : ship['nav']['waypointSymbol'], 
@@ -123,7 +132,8 @@ def get_list_of_ships():
             'cargo_capacity' : ship['cargo']['capacity'],
             'destination' : ship['nav']['route']['destination']['symbol'],
             'frame' : ship['frame']['symbol'],
-            'inventory' : ship['cargo']['inventory'],
+            # 'inventory' : ship['cargo']['inventory'],
+            'inventory' : cargo_list,            
             'arrival' : ship['nav']['route']['arrival']
         }
         response.append(response_json)
@@ -138,21 +148,51 @@ def spaceship_command_action(ship_symbol, ship_command):
     endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/' + ship_command
 
     ship_request_response_raw = requests.post(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
-    ship_request_response = ship_request_response_raw.json
+    ship_request_response = ship_request_response_raw.json()
 
     if ship_request_response_raw.status_code == 200:
         message = "Action {} on ship {} requested succesfully (response code 200)".format(ship_command, ship_symbol)
         logging.info(message)
     else:
-        message = "Action {} on ship {} requested with ERROR  (response code {}})".format(ship_command, ship_symbol, ship_request_response_raw.status_code)
+        message = "Action {} on ship {} requested with ERROR  (response code {})".format(ship_command, ship_symbol, str(ship_request_response_raw.status_code))
         logging.warning(message)
 
     return message
 
 
 
-def get_system_waypoints(system):
-    endpoint = 'https://api.spacetraders.io/v2/systems/' + system + '/waypoints'
+def spaceship_extract_action(ship_symbol, ship_command):
+
+    endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/' + ship_command
+
+    ship_request_response_raw = requests.post(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
+    ship_request_response = ship_request_response_raw.json()
+
+    if ship_request_response_raw.status_code == 201:
+        
+        message = "Mining succesful. Extracted {} of {}. Cooldown {} seconds".format(
+            ship_request_response['data']['extraction']['yield']['units'],
+            ship_request_response['data']['extraction']['yield']['symbol'],
+            ship_request_response['data']['cooldown']['totalSeconds'],
+        )
+    else: 
+        message = "Mining NOT succesful. Error code {} ({})".format(
+            ship_request_response_raw.status_code,
+            ship_request_response['error']['message']
+        )
+        logging.warning(message)
+
+    return message
+
+
+def get_system_waypoints(system, traits):
+
+    if traits == "ALL":
+        endpoint = 'https://api.spacetraders.io/v2/systems/' + system + '/waypoints'   
+    else:
+        endpoint = 'https://api.spacetraders.io/v2/systems/' + system + '/waypoints?traits=' + traits    
+
+    # endpoint = 'https://api.spacetraders.io/v2/systems/' + system + '/waypoints'
     response = []
     response_page = 0
 
@@ -240,5 +280,41 @@ def spaceship_fly_action(ship_symbol, dest_waypoint_symbol):
         logging.warning(request_response)
         message = "Error .. command not executed ..."
 
+
+    return message
+
+
+
+def get_list_of_avaliable_for_purchase_ships(waypoint):
+
+    system_waypoint = waypoint[0:7]
+    endpoint = 'https://api.spacetraders.io/v2/systems/' + system_waypoint + '/waypoints/'+ waypoint + '/shipyard'
+    avaliable_ship = requests.get(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token}).json()
+
+  
+    return avaliable_ship
+
+
+
+def buy_ship_action(ship_symbol, waypoint):
+
+    endpoint = 'https://api.spacetraders.io/v2/my/ships'
+    parameter = { 'shipType' : ship_symbol,
+                 'waypointSymbol' : waypoint }
+        
+    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token,
+                'Content-Type': 'application/json',
+                'Accept' : 'application/json' }
+
+    request_response_raw = requests.post(endpoint, json=parameter, headers=headers)
+    request_response = request_response_raw.json()
+
+    if (request_response_raw.status_code == 201):
+        cost_of_ship = request_response['data']['transaction']['price']
+        message = "Purchase succesful, cost of ship {} was {}".format(ship_symbol, cost_of_ship)
+        logging.info(message)
+    else:
+        message = "Transaction NOT completed. ({})".format(request_response['error']['message'])
+        logging.warning(message)
 
     return message

@@ -18,7 +18,7 @@
         <td>{{ agent_status.credits }}</td>
         <td>{{ agent_status.shipCount }}</td>
         <td>
-            <form method=post action="purchase_ship">
+            <form method=post action="purchase_ship_page">
                 <input type='hidden' name='headquarter' value='{{ agent_status.headquarters }}'> 
                 <input type=submit value='PURCHASE A SHIP'>
             </form>
@@ -118,7 +118,18 @@
                     <input type=submit value=DOCK>
                 </form>
                 {% endif %}
-            
+
+                {% if ship.status == "IN_ORBIT" %}
+                {% if ship.frame == "FRAME_DRONE" %}
+                <form method=post action="ship_extract_action">
+                    <input type='hidden' name='ship_symbol' value='{{ ship.ship_symbol }}'> 
+                    <input type='hidden' name='ship_requested_action' value='extract'> 
+                    <input type=submit value=MINE>
+                </form>
+                {% endif %}
+                {% endif %}
+
+
                 {% if ship.status == "IN_ORBIT" %}
                 <form method=post action="fly_ship">
                     <input type='hidden' name='ship_symbol' value='{{ ship.ship_symbol }}'> 
