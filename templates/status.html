@@ -156,7 +156,15 @@
                 </form>
                 {% endif %}
 
-      
+
+                {% if ship.enable_transfer %}
+                <form method=post action="transfer_between_ships">
+                    <input type='hidden' name='ship_symbol' value='{{ ship.ship_symbol }}'> 
+                    <input type='hidden' name='ship_waypoint' value='{{ ship.waypoint }}'> 
+                    <input type=submit value=TRANSFER>
+                </form>
+                {% endif %}
+
 
                 <form method=post action="marketplace_page">
                     <input type='hidden' name='market_waypoint' value='{{ ship.waypoint }}'> 

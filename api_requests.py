@@ -440,3 +440,41 @@ def get_cargo(ship_symbol):
     ship_cargo = response_ship_cargo['data']['inventory']
 
     return ship_cargo
+
+
+
+def transfer_products_action(ship_symbol, destination, product_symbol, units):
+
+
+    if destination == "jettison":
+        endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/jettison'
+        parameter = { 'symbol' : product_symbol,
+                     'units' : units }
+
+    else:
+        endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/transfer'
+        parameter = { 'tradeSymbol' : product_symbol,
+                     'units' : units,
+                     'shipSymbol' : destination }
+                 
+
+    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token,
+                'Content-Type': 'application/json',
+                'Accept' : 'application/json' }
+
+    request_response_raw = requests.post(endpoint, json=parameter, headers=headers)
+    request_response = request_response_raw.json()
+
+    if (request_response_raw.status_code == 200):
+        message = ("Transfer {} units of {} from {} to {}".format(
+                units,
+                product_symbol,
+                ship_symbol,
+                destination
+            ))
+        logging.info(message)
+    else:
+        message = "Transfer NOT completed. ({})".format(request_response['error']['message'])
+        logging.warning(message)
+
+    return message

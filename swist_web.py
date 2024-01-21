@@ -23,11 +23,17 @@ def status_page():
     # Enrich list of list
 
     for ship in list_of_ships:
+        # find contract
         for contract in list_of_contracts:
             if ship['waypoint'] == contract['destination']:
                 ship["contract_waypoint"] = True
                 ship["contract_id"] = contract['contract_id']
                 ship["contract_trade_symbol"] = contract['symbol']
+
+        # check for other ships
+        for ship2 in list_of_ships:
+            if ship2['waypoint'] == ship['waypoint'] and ship2['ship_symbol'] != ship['ship_symbol']:
+                ship["enable_transfer"] = True
 
 
     logging.info("Status page requested")
@@ -196,5 +202,47 @@ def deliver_good_for_contract_action():
     else:
         message = "Lack of {} required by contract. No action.".format(contract_trade_symbol)
         logging.info(message)
+    flash(message)
+    return redirect(url_for('status_page'))
+
+
+
+@app.route("/transfer_between_ships", methods=['POST'])
+def transfer_between_ships_page():
+    ship_waypoint = request.form['ship_waypoint']
+    ship_symbol = request.form['ship_symbol']
+
+    cargo = Api.get_cargo(ship_symbol)
+
+    destinations = ['jettison']
+    # list of destinations
+
+    request_status, list_of_ships = Api.get_list_of_ships()
+
+    for ship in list_of_ships:
+        if ship['waypoint'] == ship_waypoint and ship_symbol != ship['ship_symbol']:
+                destinations.append(ship['ship_symbol'])
+
+    return render_template ('transfer_page.html', ship_symbol=ship_symbol, cargo=cargo, destinations=destinations)
+
+
+
+@app.route("/transfer_products", methods=['POST'])
+def transfer_products_action():
+    destination = request.form['destination']
+    product_symbol = request.form['product_symbol']
+    market_waypoint = request.form['market_waypoint']
+    ship_symbol = request.form['ship_symbol']
+    units = request.form['units']
+
+    logging.info("Transfer {} units of {} from {} to {}".format(
+        units,
+        product_symbol,
+        ship_symbol,
+        destination
+    ))
+
+    message = Api.transfer_products_action(ship_symbol, destination, product_symbol, units)    
+
     flash(message)
     return redirect(url_for('status_page'))
