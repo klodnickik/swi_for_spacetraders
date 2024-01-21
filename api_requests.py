@@ -100,6 +100,58 @@ def accept_contract_action(contract_id):
     return message
 
 
+def fulfill_contract_action(contract_id):
+           
+    endpoint = 'https://api.spacetraders.io/v2/my/contracts/' + contract_id + '/fulfill'
+    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token }
+
+    request_response_raw = requests.post(endpoint, headers=headers)
+    request_response = request_response_raw.json()
+
+    logging.debug("(fulfill_contract_action)", request_response)
+    
+    if (request_response_raw.status_code == 200):
+        logging.info("(fulfill_contract_action)", "Response code 200")
+        if request_response['data']['contract']['fulfilled'] == "true":
+            message = "Contract {} has been fulfilled succesfully".format(contract_id)
+            logging.info("(fulfill_contract_action)", message)
+        else:
+            message = "Contract {} has NOT been fulfilled, some error?".format(contract_id)
+            logging.warning("(fulfill_contract_action)", message)
+    else:
+        message = request_response['error']['message']
+        logging.error("(fulfill_contract_action)", "Response code {}, {}".format(request_response_raw.status_code, message))
+
+    return message
+
+
+def deliver_contract_action(contract_id, ship_symbol, contract_trade_symbol, units):
+           
+    endpoint = 'https://api.spacetraders.io/v2/my/contracts/' + contract_id + '/deliver'
+
+    parameter = { 'shipSymbol' : ship_symbol,
+                 'tradeSymbol' : contract_trade_symbol,
+                 'units' : units }
+        
+    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token,
+                'Content-Type': 'application/json',
+                'Accept' : 'application/json' }
+
+    request_response_raw = requests.post(endpoint, json=parameter, headers=headers)
+    request_response = request_response_raw.json()
+
+    if request_response_raw.status_code == 200:
+        message = "{} units of {} delivered for the contract {}".format(units, contract_trade_symbol, contract_id)
+        logging.info(message)
+    else:
+        message = "Error, response code {} ({})".format(
+            request_response_raw.status_code,
+            request_response['error']['message']
+        )
+    return message
+
+
+
 
 
 def get_list_of_ships():
@@ -189,7 +241,6 @@ def get_system_waypoints(system, traits):
     else:
         endpoint = 'https://api.spacetraders.io/v2/systems/' + system + '/waypoints?traits=' + traits    
 
-    # endpoint = 'https://api.spacetraders.io/v2/systems/' + system + '/waypoints'
     response = []
     response_page = 0
 
@@ -377,3 +428,15 @@ def market_transaction_action(transaction_type, product_symbol, units, market_wa
         logging.error(request_response)
 
     return message
+
+
+
+def get_cargo(ship_symbol):
+
+    endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/cargo'
+    ship_cargo_raw = requests.get(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
+    response_ship_cargo = ship_cargo_raw.json()
+
+    ship_cargo = response_ship_cargo['data']['inventory']
+
+    return ship_cargo

@@ -61,6 +61,12 @@
                     <input type=submit value=ACCEPT>
                 </form>
                 {% endif %}
+                {% if contract.accepted == True %}
+                <form method=post action="fulfill_contract">
+                    <input type='hidden' name='contract_id' value='{{ contract.contract_id }}'> 
+                    <input type=submit value=FULFILL>
+                </form>
+                {% endif %}
             </td>
         </tr>
     {% endfor %}
@@ -139,6 +145,18 @@
                 </form>
                 {% endif %}
 
+
+                {% if ship.contract_waypoint %}
+                <form method=post action="deliver_good_for_contract">
+                    <input type='hidden' name='ship_symbol' value='{{ ship.ship_symbol }}'> 
+                    <input type='hidden' name='ship_waypoint' value='{{ ship.waypoint }}'> 
+                    <input type='hidden' name='contract_id' value='{{ ship.contract_id }}'>
+                    <input type='hidden' name='contract_trade_symbol' value='{{ ship.contract_trade_symbol }}'>
+                    <input type=submit value="DELIVER CONTRACT">
+                </form>
+                {% endif %}
+
+      
 
                 <form method=post action="marketplace_page">
                     <input type='hidden' name='market_waypoint' value='{{ ship.waypoint }}'> 

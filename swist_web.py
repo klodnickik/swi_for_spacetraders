@@ -20,6 +20,15 @@ def status_page():
     request_status, list_of_contracts = Api.get_list_of_contracts()
     request_status, list_of_ships = Api.get_list_of_ships()
 
+    # Enrich list of list
+
+    for ship in list_of_ships:
+        for contract in list_of_contracts:
+            if ship['waypoint'] == contract['destination']:
+                ship["contract_waypoint"] = True
+                ship["contract_id"] = contract['contract_id']
+                ship["contract_trade_symbol"] = contract['symbol']
+
 
     logging.info("Status page requested")
     return render_template('status.html', agent_status=agent_status, list_of_contracts=list_of_contracts, list_of_ships=list_of_ships)
@@ -30,6 +39,15 @@ def accept_contract_action():
     contract_id = request.form['contract_id']
     logging.info("Contract accepted action for contract {}".format(contract_id))
     message = Api.accept_contract_action(contract_id)
+    flash(message)
+    return redirect(url_for('status_page'))
+
+
+@app.route("/fulfill_contract", methods=['POST'])
+def fulfill_contract_action():
+    contract_id = request.form['contract_id']
+    logging.info("Fulfill contract {}".format(contract_id))
+    message = Api.fulfill_contract_action(contract_id)
     flash(message)
     return redirect(url_for('status_page'))
 
@@ -159,3 +177,24 @@ def market_transaction():
 
 
 
+@app.route("/deliver_good_for_contract", methods=['POST'])
+def deliver_good_for_contract_action():
+    contract_id = request.form['contract_id']
+    contract_trade_symbol = request.form['contract_trade_symbol']
+    ship_symbol = request.form['ship_symbol']
+    units = 0
+
+    cargo = Api.get_cargo(ship_symbol)
+
+    for product in cargo:
+        if product['symbol'] == contract_trade_symbol:
+            units = product['units']
+
+    if units > 0:
+        logging.info("Ship {} delivered {} units of {} for contract {}".format(ship_symbol, units, contract_trade_symbol, contract_id))
+        message = Api.deliver_contract_action(contract_id, ship_symbol, contract_trade_symbol, units )
+    else:
+        message = "Lack of {} required by contract. No action.".format(contract_trade_symbol)
+        logging.info(message)
+    flash(message)
+    return redirect(url_for('status_page'))
