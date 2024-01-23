@@ -1,0 +1,16 @@
+<!doctype html>
+<title>SWI for SpaceTraders</title>
+
+
+<h2>Simple Web Interface for SpaceTraders</h2>
+<p>This is web UI for project <a href='https://spacetraders.io'>https://spacetraders.io</a></p>
+
+
+{% if user_logged %}
+<b>User has been logged, check <a href="{{ url_for('status_page') }}">status</a> page</b>
+
+{% else %}
+<p> <b>Please <a href="{{ url_for('login') }}">login</a> with your SpaceTrader token</b></p>
+<p> <b>Please note that we use Cookies to store information about the session.</b></p>
+
+{% endif %}

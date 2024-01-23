@@ -4,32 +4,32 @@ import config as Config
 
 contract_product = []
 
-def get_agent_status():
+def get_agent_status(bearer_token):
     endpoint = 'https://api.spacetraders.io/v2/my/agent'
 
-    request_response = requests.get(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
+    request_response = requests.get(endpoint, headers={"Authorization": "Bearer " + bearer_token})
     agent_status_response = request_response.json()
     request_response_code = request_response.status_code
 
     if request_response_code != 200:
             logging.error("Response code: {}".format(request_response_code))
             logging.error(agent_status_response)
-
-
-    response = {
-    'agent_symbol' : agent_status_response['data']['symbol'],
-    'headquarters' : agent_status_response['data']['headquarters'],
-    'credits' : agent_status_response['data']['credits'],
-    'shipCount' : agent_status_response['data']['shipCount']  }
+            response = agent_status_response['error']['message']
+    else:
+        response = {
+        'agent_symbol' : agent_status_response['data']['symbol'],
+        'headquarters' : agent_status_response['data']['headquarters'],
+        'credits' : agent_status_response['data']['credits'],
+        'shipCount' : agent_status_response['data']['shipCount']  }
 
     return request_response_code, response 
 
 
 
-def get_list_of_contracts():
+def get_list_of_contracts(bearer_token):
 
     endpoint = 'https://api.spacetraders.io/v2/my/contracts'
-    list_of_contracts_raw = requests.get(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
+    list_of_contracts_raw = requests.get(endpoint, headers={"Authorization": "Bearer " + bearer_token})
     list_of_contracts_json = list_of_contracts_raw.json()
 
     if ( list_of_contracts_raw.status_code == 200):
@@ -75,10 +75,10 @@ def get_list_of_contracts():
 
 
 
-def accept_contract_action(contract_id):
+def accept_contract_action(bearer_token, contract_id):
            
     endpoint = 'https://api.spacetraders.io/v2/my/contracts/' + contract_id + '/accept'
-    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token }
+    headers = { 'Authorization' : 'Bearer ' + bearer_token }
 
     request_response_raw = requests.post(endpoint, headers=headers)
     request_response = request_response_raw.json()
@@ -100,10 +100,10 @@ def accept_contract_action(contract_id):
     return message
 
 
-def fulfill_contract_action(contract_id):
+def fulfill_contract_action(bearer_token, contract_id):
            
     endpoint = 'https://api.spacetraders.io/v2/my/contracts/' + contract_id + '/fulfill'
-    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token }
+    headers = { 'Authorization' : 'Bearer ' + bearer_token }
 
     request_response_raw = requests.post(endpoint, headers=headers)
     request_response = request_response_raw.json()
@@ -125,7 +125,7 @@ def fulfill_contract_action(contract_id):
     return message
 
 
-def deliver_contract_action(contract_id, ship_symbol, contract_trade_symbol, units):
+def deliver_contract_action(bearer_token, contract_id, ship_symbol, contract_trade_symbol, units):
            
     endpoint = 'https://api.spacetraders.io/v2/my/contracts/' + contract_id + '/deliver'
 
@@ -133,7 +133,7 @@ def deliver_contract_action(contract_id, ship_symbol, contract_trade_symbol, uni
                  'tradeSymbol' : contract_trade_symbol,
                  'units' : units }
         
-    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token,
+    headers = { 'Authorization' : 'Bearer ' + bearer_token,
                 'Content-Type': 'application/json',
                 'Accept' : 'application/json' }
 
@@ -154,10 +154,10 @@ def deliver_contract_action(contract_id, ship_symbol, contract_trade_symbol, uni
 
 
 
-def get_list_of_ships():
+def get_list_of_ships(bearer_token):
 
     endpoint = 'https://api.spacetraders.io/v2/my/ships'
-    ship_status_response = requests.get(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token}).json()
+    ship_status_response = requests.get(endpoint, headers={"Authorization": "Bearer " + bearer_token}).json()
 
     response = []
 
@@ -192,11 +192,11 @@ def get_list_of_ships():
 
 
 
-def spaceship_command_action(ship_symbol, ship_command):
+def spaceship_command_action(bearer_token, ship_symbol, ship_command):
 
     endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/' + ship_command
 
-    ship_request_response_raw = requests.post(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
+    ship_request_response_raw = requests.post(endpoint, headers={"Authorization": "Bearer " + bearer_token})
     ship_request_response = ship_request_response_raw.json()
 
     if ship_request_response_raw.status_code == 200:
@@ -210,11 +210,11 @@ def spaceship_command_action(ship_symbol, ship_command):
 
 
 
-def spaceship_extract_action(ship_symbol, ship_command):
+def spaceship_extract_action(bearer_token, ship_symbol, ship_command):
 
     endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/' + ship_command
 
-    ship_request_response_raw = requests.post(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
+    ship_request_response_raw = requests.post(endpoint, headers={"Authorization": "Bearer " + bearer_token})
     ship_request_response = ship_request_response_raw.json()
 
     if ship_request_response_raw.status_code == 201:
@@ -234,7 +234,7 @@ def spaceship_extract_action(ship_symbol, ship_command):
     return message
 
 
-def get_system_waypoints(system, traits):
+def get_system_waypoints(bearer_token, system, traits):
 
     if traits == "ALL":
         endpoint = 'https://api.spacetraders.io/v2/systems/' + system + '/waypoints'   
@@ -244,7 +244,7 @@ def get_system_waypoints(system, traits):
     response = []
     response_page = 0
 
-    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token }
+    headers = { 'Authorization' : 'Bearer ' + bearer_token }
 
 
     request_response_raw = requests.get(endpoint, headers=headers)
@@ -297,12 +297,12 @@ def get_system_waypoints(system, traits):
 
 
 
-def spaceship_fly_action(ship_symbol, dest_waypoint_symbol):
+def spaceship_fly_action(bearer_token, ship_symbol, dest_waypoint_symbol):
 
     endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/navigate'
     parameter = { 'waypointSymbol' : dest_waypoint_symbol }
         
-    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token,
+    headers = { 'Authorization' : 'Bearer ' + bearer_token,
                 'Content-Type': 'application/json',
                 'Accept' : 'application/json' }
 
@@ -333,24 +333,24 @@ def spaceship_fly_action(ship_symbol, dest_waypoint_symbol):
 
 
 
-def get_list_of_avaliable_for_purchase_ships(waypoint):
+def get_list_of_avaliable_for_purchase_ships(bearer_token, waypoint):
 
     system_waypoint = waypoint[0:7]
     endpoint = 'https://api.spacetraders.io/v2/systems/' + system_waypoint + '/waypoints/'+ waypoint + '/shipyard'
-    avaliable_ship = requests.get(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token}).json()
+    avaliable_ship = requests.get(endpoint, headers={"Authorization": "Bearer " + bearer_token}).json()
 
   
     return avaliable_ship
 
 
 
-def buy_ship_action(ship_symbol, waypoint):
+def buy_ship_action(bearer_token, ship_symbol, waypoint):
 
     endpoint = 'https://api.spacetraders.io/v2/my/ships'
     parameter = { 'shipType' : ship_symbol,
                  'waypointSymbol' : waypoint }
         
-    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token,
+    headers = { 'Authorization' : 'Bearer ' + bearer_token,
                 'Content-Type': 'application/json',
                 'Accept' : 'application/json' }
 
@@ -368,12 +368,12 @@ def buy_ship_action(ship_symbol, waypoint):
     return message
 
 
-def get_list_of_avaliable_for_purchase_goods(waypoint):
+def get_list_of_avaliable_for_purchase_goods(bearer_token, waypoint):
 
     system_waypoint = waypoint[0:7]
 
     endpoint = 'https://api.spacetraders.io/v2/systems/' + system_waypoint + '/waypoints/'+ waypoint + '/market'
-    market_data_raw = requests.get(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
+    market_data_raw = requests.get(endpoint, headers={"Authorization": "Bearer " + bearer_token})
     market_data = market_data_raw.json()
 
     if market_data_raw.status_code == 200:
@@ -395,14 +395,14 @@ def get_list_of_avaliable_for_purchase_goods(waypoint):
     return avaliable_goods
   
 
-def market_transaction_action(transaction_type, product_symbol, units, market_waypoint, ship_symbol ):
+def market_transaction_action(bearer_token, transaction_type, product_symbol, units, market_waypoint, ship_symbol ):
 
 
     endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/' + transaction_type
     parameter = { 'symbol' : product_symbol,
                  'units' : units }
         
-    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token,
+    headers = { 'Authorization' : 'Bearer ' + bearer_token,
                 'Content-Type': 'application/json',
                 'Accept' : 'application/json' }
 
@@ -431,10 +431,10 @@ def market_transaction_action(transaction_type, product_symbol, units, market_wa
 
 
 
-def get_cargo(ship_symbol):
+def get_cargo(bearer_token, ship_symbol):
 
     endpoint = 'https://api.spacetraders.io/v2/my/ships/' + ship_symbol + '/cargo'
-    ship_cargo_raw = requests.get(endpoint, headers={"Authorization": "Bearer " + Config.bearer_token})
+    ship_cargo_raw = requests.get(endpoint, headers={"Authorization": "Bearer " + bearer_token})
     response_ship_cargo = ship_cargo_raw.json()
 
     ship_cargo = response_ship_cargo['data']['inventory']
@@ -443,7 +443,7 @@ def get_cargo(ship_symbol):
 
 
 
-def transfer_products_action(ship_symbol, destination, product_symbol, units):
+def transfer_products_action(bearer_token, ship_symbol, destination, product_symbol, units):
 
 
     if destination == "jettison":
@@ -458,7 +458,7 @@ def transfer_products_action(ship_symbol, destination, product_symbol, units):
                      'shipSymbol' : destination }
                  
 
-    headers = { 'Authorization' : 'Bearer ' + Config.bearer_token,
+    headers = { 'Authorization' : 'Bearer ' + bearer_token,
                 'Content-Type': 'application/json',
                 'Accept' : 'application/json' }
 

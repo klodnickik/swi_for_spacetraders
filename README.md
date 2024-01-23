@@ -15,10 +15,10 @@ The application will be hosted publicly, after implementing login functionality.
 - add information about location for each ship location (on status page)
 - activate support for survey
 - support for jumps between systems
+- add information about cost of new ship
+- after db implementation, estimated cost of products in inventory
 
 ### major changes
-- login screen
-- registartion of new agent / deleting the previous account
 - automation of tasks, probably will require database support
 
 ## instalation

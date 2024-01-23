@@ -1,5 +1,5 @@
-from flask import Flask
-from flask import render_template, flash, redirect, url_for, request
+# from flask import Flask
+from flask import Flask, render_template, flash, redirect, url_for, request, session, abort
 import api_requests as Api
 import config as Config
 import logging
@@ -8,17 +8,47 @@ import logging
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
 
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
+
+@app.route('/')
+def index():
+
+    if 'game_token' in session:
+        user_logged = True
+    else:
+        user_logged = False
+
+    return render_template('index.html', user_logged=user_logged)
+
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        session['game_token'] = request.form['game_token']
+        return redirect(url_for('index'))
+    return '''
+        <p>Please provide game token</p>
+        <form method="post">
+            <p><input type=text name=game_token>
+            <p><input type=submit value=Login>
+        </form>
+    '''
+
+@app.route('/logout')
+def logout():
+    session.pop('game_token', None)
+    return redirect(url_for('index'))
 
 
 @app.route("/status")
 def status_page():
 
-    request_status, agent_status = Api.get_agent_status()
-    request_status, list_of_contracts = Api.get_list_of_contracts()
-    request_status, list_of_ships = Api.get_list_of_ships()
+    bearer_token = session['game_token']
+    request_status, agent_status = Api.get_agent_status(bearer_token)
+    if request_status != 200: abort(403)
+
+    request_status, list_of_contracts = Api.get_list_of_contracts(bearer_token)
+    request_status, list_of_ships = Api.get_list_of_ships(bearer_token)
 
     # Enrich list of list
 
@@ -42,29 +72,32 @@ def status_page():
 
 @app.route("/accept_contract", methods=['POST'])
 def accept_contract_action():
+    bearer_token = session['game_token']
     contract_id = request.form['contract_id']
     logging.info("Contract accepted action for contract {}".format(contract_id))
-    message = Api.accept_contract_action(contract_id)
+    message = Api.accept_contract_action(bearer_token, contract_id)
     flash(message)
     return redirect(url_for('status_page'))
 
 
 @app.route("/fulfill_contract", methods=['POST'])
 def fulfill_contract_action():
+    bearer_token = session['game_token']
     contract_id = request.form['contract_id']
     logging.info("Fulfill contract {}".format(contract_id))
-    message = Api.fulfill_contract_action(contract_id)
+    message = Api.fulfill_contract_action(bearer_token, contract_id)
     flash(message)
     return redirect(url_for('status_page'))
 
 
 @app.route("/ship_action", methods=['POST'])
 def ship_action():
+    bearer_token = session['game_token']
     ship_symbol = request.form['ship_symbol']
     ship_action_type = request.form['ship_requested_action']
 
     logging.info("(ship_action)","Ship {} requested action {}".format(ship_symbol, ship_action_type))
-    message = Api.spaceship_command_action(ship_symbol, ship_action_type)
+    message = Api.spaceship_command_action(bearer_token, ship_symbol, ship_action_type)
     flash(message)
     return redirect(url_for('status_page'))
 
@@ -75,7 +108,7 @@ def ship_extract_action():
     ship_action_type = request.form['ship_requested_action']
 
     logging.info("(ship_action)","Ship {} requested action {}".format(ship_symbol, ship_action_type))
-    message = Api.spaceship_extract_action(ship_symbol, ship_action_type)
+    message = Api.spaceship_extract_action(session['game_token'], ship_symbol, ship_action_type)
     flash(message)
     return redirect(url_for('status_page'))
 
@@ -89,7 +122,7 @@ def ship_fly_action():
     system_waypoint = ship_waypoint[0:7]
     logging.info ("System waypoint".format(system_waypoint))
     
-    request_status, system_waypoints = Api.get_system_waypoints(system_waypoint, "ALL")
+    request_status, system_waypoints = Api.get_system_waypoints(session['game_token'], system_waypoint, "ALL")
 
     return render_template('fly_ship.html', 
                            ship_symbol=ship_symbol,
@@ -104,7 +137,7 @@ def fly_ship_action():
     ship_symbol = request.form['ship_symbol']
     dest_waypoint_symbol = request.form['dest_waypoint_symbol']
     logging.info("(fly_ship_action)","Ship {} requested command to fly to {}".format(ship_symbol, dest_waypoint_symbol))
-    message = Api.spaceship_fly_action(ship_symbol, dest_waypoint_symbol)
+    message = Api.spaceship_fly_action(session['game_token'], ship_symbol, dest_waypoint_symbol)
     flash(message)
     return redirect(url_for('status_page'))
 
@@ -120,7 +153,7 @@ def purchase_ship_page():
     available_ships = []
 
     for shipyard in system_waypoints:
-        available_ships_json = Api.get_list_of_avaliable_for_purchase_ships(shipyard['symbol'])
+        available_ships_json = Api.get_list_of_avaliable_for_purchase_ships(session['game_token'], shipyard['symbol'])
 
         for ship_type in available_ships_json['data']['shipTypes']:
             print (ship_type)
@@ -142,7 +175,7 @@ def buy_ship_action():
 
     logging.info("Requested purchase of ship {} in shipyard {}".format(ship_type, waypoint ))
 
-    message = Api.buy_ship_action(ship_type, waypoint)
+    message = Api.buy_ship_action(session['game_token'], ship_type, waypoint)
     flash(message)
     return redirect(url_for('status_page'))
 
@@ -155,7 +188,7 @@ def marketplace_page():
     ship_symbol = request.form['ship_symbol']
     ship_status = request.form['ship_status']
 
-    avaliable_goods = Api.get_list_of_avaliable_for_purchase_goods(market_waypoint)
+    avaliable_goods = Api.get_list_of_avaliable_for_purchase_goods(session['game_token'], market_waypoint)
 
     return render_template('marketplace_page.html', avaliable_goods=avaliable_goods,market_waypoint=market_waypoint, ship_symbol=ship_symbol, ship_status=ship_status)
 
@@ -177,7 +210,7 @@ def market_transaction():
         market_waypoint))
     
 
-    message = Api.market_transaction_action(transaction_type, product_symbol, units, market_waypoint, ship_symbol )
+    message = Api.market_transaction_action(session['game_token'], transaction_type, product_symbol, units, market_waypoint, ship_symbol )
     flash(message)
     return redirect(url_for('status_page'))
 
@@ -190,7 +223,7 @@ def deliver_good_for_contract_action():
     ship_symbol = request.form['ship_symbol']
     units = 0
 
-    cargo = Api.get_cargo(ship_symbol)
+    cargo = Api.get_cargo(session['game_token'], ship_symbol)
 
     for product in cargo:
         if product['symbol'] == contract_trade_symbol:
@@ -198,7 +231,7 @@ def deliver_good_for_contract_action():
 
     if units > 0:
         logging.info("Ship {} delivered {} units of {} for contract {}".format(ship_symbol, units, contract_trade_symbol, contract_id))
-        message = Api.deliver_contract_action(contract_id, ship_symbol, contract_trade_symbol, units )
+        message = Api.deliver_contract_action(session['game_token'], contract_id, ship_symbol, contract_trade_symbol, units )
     else:
         message = "Lack of {} required by contract. No action.".format(contract_trade_symbol)
         logging.info(message)
@@ -212,12 +245,12 @@ def transfer_between_ships_page():
     ship_waypoint = request.form['ship_waypoint']
     ship_symbol = request.form['ship_symbol']
 
-    cargo = Api.get_cargo(ship_symbol)
+    cargo = Api.get_cargo(session['game_token'], ship_symbol)
 
     destinations = ['jettison']
     # list of destinations
 
-    request_status, list_of_ships = Api.get_list_of_ships()
+    request_status, list_of_ships = Api.get_list_of_ships(session['game_token'])
 
     for ship in list_of_ships:
         if ship['waypoint'] == ship_waypoint and ship_symbol != ship['ship_symbol']:
@@ -242,7 +275,12 @@ def transfer_products_action():
         destination
     ))
 
-    message = Api.transfer_products_action(ship_symbol, destination, product_symbol, units)    
+    message = Api.transfer_products_action(session['game_token'], ship_symbol, destination, product_symbol, units)    
 
     flash(message)
     return redirect(url_for('status_page'))
+
+
+@app.errorhandler(403)
+def page_not_found(error):
+    return render_template('incorrect_token.html'), 403
